@@ -1,4 +1,3 @@
-// index.js
 const express = require('express');
 const passport = require('passport');
 const session = require('express-session');
@@ -6,13 +5,11 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
 const app = express();
 
-// ✅ Replace these with your actual credentials from Google Cloud Console
-const GOOGLE_CLIENT_ID = "982597322347-bo3lc910m0abpi724fc31dmg0db1a7tn.apps.googleusercontent.com";
-const GOOGLE_CLIENT_SECRET = "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";
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
-// 🔐 Session setup
 app.use(session({
-  secret: 'quizapp-secret-key',
+  secret: process.env.SESSION_SECRET || 'quizapp-secret-key',
   resave: false,
   saveUninitialized: true
 }));
@@ -20,46 +17,28 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// 🧠 Passport Google OAuth setup
 passport.use(new GoogleStrategy({
   clientID: GOOGLE_CLIENT_ID,
   clientSecret: GOOGLE_CLIENT_SECRET,
-  callbackURL: "https://quizapp-psi-azure.vercel.app/auth/google/callback" // must match in Google Console
-},
-  (accessToken, refreshToken, profile, done) => {
-    console.log("User profile:", profile);
-    return done(null, profile);
-  }
-));
+  callbackURL: "https://your-vercel-project-name.vercel.app/auth/google/callback"
+}, (accessToken, refreshToken, profile, done) => {
+  return done(null, profile);
+}));
 
-passport.serializeUser((user, done) => {
-  done(null, user);
-});
-passport.deserializeUser((user, done) => {
-  done(null, user);
-});
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((user, done) => done(null, user));
 
-// ✅ Google Auth Route
-app.get('/auth/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
-);
+app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
-// ✅ Google Callback Route
 app.get('/auth/google/callback',
   passport.authenticate('google', { failureRedirect: '/login-failure' }),
   (req, res) => {
-    // Redirect back to your Android WebView page
-    res.redirect('quizapp://dashboard');  // 👈 custom deep link for Android redirect
+    res.redirect('quizapp://dashboard'); // your Android deep link
   }
 );
 
-// ✅ Optional: Failure route
-app.get('/login-failure', (req, res) => {
-  res.send('Login failed, please try again.');
-});
+app.get('/login-failure', (req, res) => res.send('Login failed! Try again.'));
 
-// ✅ Server start
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log('QuizApp backend running on http://localhost:${PORT}');
-});
+app.get('/', (req, res) => res.send('QuizApp Backend is running 🚀'));
+
+module.exports = app;
