@@ -33,14 +33,14 @@ app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'em
 app.get('/auth/google/callback',
   passport.authenticate('google', { failureRedirect: '/login-failure' }),
   (req, res) => {
-    const userAgent = req.headers['user-agent'] || '';
-    if (userAgent.includes('Android') || userAgent.includes('Mobile')) {
-      res.redirect('quizapp://dashboard');
-    } else {
-      res.redirect('https://quizapp-psi-azure.vercel.app/dashboard');
-    }
+    res.redirect('quizapp://dashboard'); // your Android deep link
   }
 );
 
+app.get('/login-failure', (req, res) => res.send('Login failed! Try again.'));
+
+app.get('/', (req, res) => res.send('QuizApp Backend is running 🚀'));
+
 module.exports = app;
+
 
